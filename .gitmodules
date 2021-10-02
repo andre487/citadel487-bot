@@ -1,0 +1,3 @@
+[submodule "downloader487"]
+	path = downloader487
+	url = git@github.com:andre487/downloader487.git
