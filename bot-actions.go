@@ -9,7 +9,17 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-func InitBotActions(bot *tgbotapi.BotAPI) {
+type BotActionsParams struct {
+	Bot        *tgbotapi.BotAPI
+	S3Endpoint string
+	S3Region   string
+	S3Bucket   string
+	S3Access   string
+	S3Secret   string
+}
+
+func InitBotActions(params BotActionsParams) error {
+	bot := params.Bot
 	if os.Getenv("BOT_DEBUG") == "1" {
 		bot.Debug = true
 	}
@@ -19,7 +29,7 @@ func InitBotActions(bot *tgbotapi.BotAPI) {
 
 	updates, err := bot.GetUpdatesChan(u)
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 
 	log.Printf("Waiting for updates")
@@ -29,6 +39,8 @@ func InitBotActions(bot *tgbotapi.BotAPI) {
 		}
 		onUpdate(bot, &update)
 	}
+
+	return nil
 }
 
 func onUpdate(bot *tgbotapi.BotAPI, update *tgbotapi.Update) {
