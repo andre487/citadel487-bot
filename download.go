@@ -14,6 +14,12 @@ type DownloadByUrlParams struct {
 	BotActionsParams
 }
 
+func DownloadByUrlWithQueue(channel *chan DownloadByUrlParams) {
+	for params := range *channel {
+		DownloadByUrl(params)
+	}
+}
+
 func DownloadByUrl(params DownloadByUrlParams) {
 	args := []string{
 		"--download-dir", params.DownloadDir,
@@ -39,6 +45,10 @@ func DownloadByUrl(params DownloadByUrlParams) {
 	cmd.Stderr = &cmdStderr
 
 	Logger.Debug("Run downloader:", cmd)
+	startMsg := tgbotapi.NewMessage(params.Message.Chat.ID, "Download started")
+	startMsg.ReplyToMessageID = params.Message.MessageID
+	params.Bot.Send(startMsg)
+
 	err := cmd.Run()
 	Logger.Debug("Downloader stderr:", cmdStderr.String())
 
@@ -46,7 +56,7 @@ func DownloadByUrl(params DownloadByUrlParams) {
 	if err == nil {
 		res = append(res, "success")
 	} else {
-		res = append(res, "error")
+		res = append(res, "error: "+err.Error())
 	}
 
 	msgText := strings.Join(res, "")

@@ -40,18 +40,21 @@ func InitBotActions(params BotActionsParams) error {
 		return err
 	}
 
+	downloadChannel := make(chan DownloadByUrlParams)
+	go DownloadByUrlWithQueue(&downloadChannel)
+
 	Logger.Info("Waiting for updates")
 	for update := range updates {
 		if update.Message == nil {
 			continue
 		}
-		onUpdate(params, &update)
+		onUpdate(params, &downloadChannel, &update)
 	}
 
 	return nil
 }
 
-func onUpdate(params BotActionsParams, update *tgbotapi.Update) {
+func onUpdate(params BotActionsParams, downloadChannel *chan DownloadByUrlParams, update *tgbotapi.Update) {
 	message := update.Message
 	Logger.Debug("Received message:", message.Chat.ID, message.From.UserName, strings.ReplaceAll(message.Text, "\n", " "))
 
@@ -68,13 +71,13 @@ func onUpdate(params BotActionsParams, update *tgbotapi.Update) {
 
 	cleanText := strings.TrimSpace(message.Text)
 	if strings.HasPrefix(cleanText, "/download") {
-		actionDownload(params, update)
+		actionDownload(params, downloadChannel, update)
 	} else {
 		actionDefault(params, update)
 	}
 }
 
-func actionDownload(params BotActionsParams, update *tgbotapi.Update) {
+func actionDownload(params BotActionsParams, downloadChannel *chan DownloadByUrlParams, update *tgbotapi.Update) {
 	message := update.Message
 
 	urls := downloadRegexp.FindAllString(message.Text, -1)
@@ -99,7 +102,7 @@ func actionDownload(params BotActionsParams, update *tgbotapi.Update) {
 	dwlParams.DownloaderPath = params.DownloaderPath
 	dwlParams.DownloadDir = params.DownloadDir
 
-	go DownloadByUrl(dwlParams)
+	*downloadChannel <- dwlParams
 }
 
 func actionDefault(params BotActionsParams, update *tgbotapi.Update) {
