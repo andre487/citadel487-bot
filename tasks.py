@@ -23,6 +23,7 @@ SECRETS = {
     'dev-bot-token': ('e6qf87djrscl6bsvp102', 'token'),
     's3-access': ('e6q3nf38hdbee440d4l8', 's3-access'),
     's3-secret': ('e6q3nf38hdbee440d4l8', 's3-secret'),
+    'netrc': ('e6qmn9f60sspf916ncu1', 'content'),
 }
 
 _yc = None
