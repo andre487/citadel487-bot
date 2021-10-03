@@ -11,7 +11,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN mkdir -p /opt/app && \
     apt update && \
-    apt install -y ca-certificates && \
+    apt install -y ca-certificates ffmpeg && \
     apt clean
 
 COPY --from=builder /build/citadel487-bot /opt/app
