@@ -2,12 +2,19 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
+	"math/rand"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -86,4 +93,58 @@ func DownloadByUrl(params DownloadByUrlParams) {
 	if sendLogErr != nil {
 		Logger.Error("Send log error:", sendLogErr.Error())
 	}
+}
+
+func DownloadDocument(params BotActionsParams, update *tgbotapi.Update) {
+	message := update.Message
+	Logger.Debug("Got document", message.Document.FileID)
+
+	url, err := params.Bot.GetFileDirectURL(message.Document.FileID)
+	if err != nil {
+		msg := tgbotapi.NewMessage(message.Chat.ID, "Can't get URL of document: "+err.Error())
+		msg.ReplyToMessageID = message.MessageID
+		params.Bot.Send(msg)
+		Logger.Error("URL error:", err.Error())
+		return
+	}
+	Logger.Debug("Got document URL")
+
+	resp, err := http.Get(url)
+	if err != nil {
+		msg := tgbotapi.NewMessage(message.Chat.ID, "Can't download document: "+err.Error())
+		msg.ReplyToMessageID = message.MessageID
+		params.Bot.Send(msg)
+		Logger.Error("Download error:", err.Error())
+		return
+	}
+
+	fileName := strings.ReplaceAll(fmt.Sprintf("telegram-%d-%s", rand.Int(), message.Document.FileName), " ", "_")
+	Logger.Debug("File name:", fileName)
+
+	s3Session := session.Must(session.NewSession(&aws.Config{
+		Endpoint:    aws.String(params.S3Endpoint),
+		Region:      aws.String(params.S3Region),
+		Credentials: credentials.NewStaticCredentials(params.S3Access, params.S3Secret, ""),
+	}))
+	uploader := s3manager.NewUploader(s3Session)
+
+	uploadResult, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(params.S3Bucket),
+		Key:    aws.String(fileName),
+		Body:   resp.Body,
+	})
+	resp.Body.Close()
+
+	if err != nil {
+		msg := tgbotapi.NewMessage(message.Chat.ID, "Can't upload document: "+err.Error())
+		msg.ReplyToMessageID = message.MessageID
+		params.Bot.Send(msg)
+		Logger.Error("Upload error:", err.Error())
+		return
+	}
+
+	msg := tgbotapi.NewMessage(message.Chat.ID, "Download success")
+	msg.ReplyToMessageID = message.MessageID
+	params.Bot.Send(msg)
+	Logger.Info("File uploaded to", uploadResult.Location)
 }

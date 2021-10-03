@@ -73,13 +73,15 @@ func onUpdate(params BotActionsParams, downloadChannel *chan DownloadByUrlParams
 
 	cleanText := strings.TrimSpace(message.Text)
 	if strings.HasPrefix(cleanText, "/download") {
-		actionDownload(params, downloadChannel, update)
+		actionDownloadUrl(params, downloadChannel, update)
+	} else if message.Document != nil {
+		actionDownloadDocument(params, update)
 	} else {
 		actionDefault(params, update)
 	}
 }
 
-func actionDownload(params BotActionsParams, downloadChannel *chan DownloadByUrlParams, update *tgbotapi.Update) {
+func actionDownloadUrl(params BotActionsParams, downloadChannel *chan DownloadByUrlParams, update *tgbotapi.Update) {
 	message := update.Message
 
 	urls := downloadRegexp.FindAllString(message.Text, -1)
@@ -91,6 +93,26 @@ func actionDownload(params BotActionsParams, downloadChannel *chan DownloadByUrl
 		return
 	}
 
+	downloadFiles(params, downloadChannel, message, urls)
+}
+
+func actionDownloadDocument(params BotActionsParams, update *tgbotapi.Update) {
+	DownloadDocument(params, update)
+}
+
+func actionDefault(params BotActionsParams, update *tgbotapi.Update) {
+	message := update.Message
+
+	msg := tgbotapi.NewMessage(message.Chat.ID, "Unknown action")
+	msg.ReplyToMessageID = message.MessageID
+
+	params.Bot.Send(msg)
+}
+
+func downloadFiles(
+	params BotActionsParams, downloadChannel *chan DownloadByUrlParams,
+	message *tgbotapi.Message, urls []string,
+) {
 	dwlParams := DownloadByUrlParams{
 		Message: message,
 		Urls:    urls,
@@ -105,13 +127,4 @@ func actionDownload(params BotActionsParams, downloadChannel *chan DownloadByUrl
 	dwlParams.DownloadDir = params.DownloadDir
 
 	*downloadChannel <- dwlParams
-}
-
-func actionDefault(params BotActionsParams, update *tgbotapi.Update) {
-	message := update.Message
-
-	msg := tgbotapi.NewMessage(message.Chat.ID, "Unknown action")
-	msg.ReplyToMessageID = message.MessageID
-
-	params.Bot.Send(msg)
 }
