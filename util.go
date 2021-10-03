@@ -2,7 +2,6 @@ package main
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
@@ -29,8 +28,8 @@ func GetSecretValue(envVar string, filePath *string) (string, error) {
 	return strings.TrimSpace(string(b)), nil
 }
 
-func FatalOnErr(err error) {
+func PanicOnErr(err error) {
 	if err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 	}
 }

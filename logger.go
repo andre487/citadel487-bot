@@ -20,5 +20,5 @@ func SetupLogger() {
 
 	logging.SetBackend(backendLeveled)
 
-	Logger.Info("Logger configured")
+	Logger.Debug("Logger configured")
 }
