@@ -2,7 +2,10 @@ package main
 
 import (
 	"bytes"
+	"io/ioutil"
+	"os"
 	"os/exec"
+	"path"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -12,6 +15,16 @@ type DownloadByUrlParams struct {
 	Message *tgbotapi.Message
 	Urls    []string
 	BotActionsParams
+}
+
+func PrepareNetRc() {
+	netRcContent := os.Getenv("NETRC")
+	if len(netRcContent) == 0 {
+		return
+	}
+	home := os.Getenv("HOME")
+	ioutil.WriteFile(path.Join(home, ".netrc"), []byte(netRcContent), 0600)
+	Logger.Info("Netrc file of", len(netRcContent), "bytes has been written")
 }
 
 func DownloadByUrlWithQueue(channel *chan DownloadByUrlParams) {

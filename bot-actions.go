@@ -27,6 +27,8 @@ var allowedUserName = "andre487"
 var allowedChat = 94764326
 
 func InitBotActions(params BotActionsParams) error {
+	PrepareNetRc()
+
 	bot := params.Bot
 	if os.Getenv("BOT_DEBUG") == "1" {
 		bot.Debug = true
