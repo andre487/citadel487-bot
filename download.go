@@ -97,9 +97,53 @@ func DownloadByUrl(params DownloadByUrlParams) {
 
 func DownloadDocument(params BotActionsParams, update *tgbotapi.Update) {
 	message := update.Message
-	Logger.Debug("Got document", message.Document.FileID)
+	Logger.Debug("Got document of type", message.Document.MimeType)
 
-	url, err := params.Bot.GetFileDirectURL(message.Document.FileID)
+	fileID := message.Document.FileID
+	fileName := strings.ReplaceAll(fmt.Sprintf("telegram-%d-%s", rand.Int(), message.Document.FileName), " ", "_")
+	downloadTgFile(params, update, fileID, fileName)
+}
+
+func DownloadPhoto(params BotActionsParams, update *tgbotapi.Update) {
+	message := update.Message
+	var photo tgbotapi.PhotoSize
+	for _, curPhoto := range *message.Photo {
+		if curPhoto.Height >= photo.Height {
+			photo = curPhoto
+		}
+	}
+	Logger.Debug("Got photo with height", photo.Height)
+
+	fileID := photo.FileID
+	fileName := fmt.Sprintf("telegram-%d.jpg", rand.Int())
+	downloadTgFile(params, update, fileID, fileName)
+}
+
+func DownloadVideo(params BotActionsParams, update *tgbotapi.Update) {
+	message := update.Message
+	Logger.Debug("Got video of type", message.Video.MimeType)
+
+	fileID := message.Video.FileID
+	fileName := fmt.Sprintf("telegram-%d.mp4", rand.Int())
+	downloadTgFile(params, update, fileID, fileName)
+}
+
+func downloadTgFile(params BotActionsParams, update *tgbotapi.Update, fileID string, fileName string) {
+	message := update.Message
+	Logger.Debug("File name:", fileName)
+
+	var prefix string
+	if message.ForwardFrom != nil {
+		prefix = message.ForwardFrom.UserName
+	} else if message.ForwardFromChat != nil {
+		prefix = message.ForwardFromChat.UserName
+	}
+
+	if len(prefix) > 0 {
+		fileName = strings.ReplaceAll(fileName, "telegram-", fmt.Sprintf("telegram-%s-", prefix))
+	}
+
+	url, err := params.Bot.GetFileDirectURL(fileID)
 	if err != nil {
 		msg := tgbotapi.NewMessage(message.Chat.ID, "Can't get URL of document: "+err.Error())
 		msg.ReplyToMessageID = message.MessageID
@@ -117,9 +161,6 @@ func DownloadDocument(params BotActionsParams, update *tgbotapi.Update) {
 		Logger.Error("Download error:", err.Error())
 		return
 	}
-
-	fileName := strings.ReplaceAll(fmt.Sprintf("telegram-%d-%s", rand.Int(), message.Document.FileName), " ", "_")
-	Logger.Debug("File name:", fileName)
 
 	s3Session := session.Must(session.NewSession(&aws.Config{
 		Endpoint:    aws.String(params.S3Endpoint),

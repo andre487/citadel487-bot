@@ -75,7 +75,11 @@ func onUpdate(params BotActionsParams, downloadChannel *chan DownloadByUrlParams
 	if strings.HasPrefix(cleanText, "/download") {
 		actionDownloadUrl(params, downloadChannel, update)
 	} else if message.Document != nil {
-		actionDownloadDocument(params, update)
+		DownloadDocument(params, update)
+	} else if message.Photo != nil {
+		DownloadPhoto(params, update)
+	} else if message.Video != nil {
+		DownloadVideo(params, update)
 	} else {
 		actionDefault(params, update)
 	}
@@ -94,10 +98,6 @@ func actionDownloadUrl(params BotActionsParams, downloadChannel *chan DownloadBy
 	}
 
 	downloadFiles(params, downloadChannel, message, urls)
-}
-
-func actionDownloadDocument(params BotActionsParams, update *tgbotapi.Update) {
-	DownloadDocument(params, update)
 }
 
 func actionDefault(params BotActionsParams, update *tgbotapi.Update) {
