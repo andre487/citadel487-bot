@@ -62,8 +62,15 @@ func DownloadByUrl(params DownloadByUrlParams) {
 	msgText := strings.Join(res, "")
 	Logger.Debug(msgText)
 
-	msg := tgbotapi.NewMessage(params.Message.Chat.ID, msgText)
-	msg.ReplyToMessageID = params.Message.MessageID
-	msg.ParseMode = tgbotapi.ModeMarkdown
-	params.Bot.Send(msg)
+	logFileBytes := tgbotapi.FileBytes{
+		Name:  "download.txt",
+		Bytes: cmdStderr.Bytes(),
+	}
+	logFile := tgbotapi.NewDocumentUpload(params.Message.Chat.ID, logFileBytes)
+	logFile.ReplyToMessageID = params.Message.MessageID
+	logFile.Caption = msgText
+	_, sendLogErr := params.Bot.Send(logFile)
+	if sendLogErr != nil {
+		Logger.Error("Send log error:", sendLogErr.Error())
+	}
 }
