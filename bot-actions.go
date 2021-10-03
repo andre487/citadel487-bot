@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -20,6 +21,10 @@ type BotActionsParams struct {
 }
 
 var downloadRegexp = regexp.MustCompile(`(https?://\S+)(?:\s|$)`)
+
+// TODO: move to config
+var allowedUserName = "andre487"
+var allowedChat = 94764326
 
 func InitBotActions(params BotActionsParams) error {
 	bot := params.Bot
@@ -48,7 +53,18 @@ func InitBotActions(params BotActionsParams) error {
 
 func onUpdate(params BotActionsParams, update *tgbotapi.Update) {
 	message := update.Message
-	Logger.Debug("Received message:", message.From.UserName, strings.ReplaceAll(message.Text, "\n", " "))
+	Logger.Debug("Received message:", message.Chat.ID, message.From.UserName, strings.ReplaceAll(message.Text, "\n", " "))
+
+	if message.From.UserName != allowedUserName || message.Chat.ID != int64(allowedChat) {
+		rickRollMsg := tgbotapi.NewMessage(message.Chat.ID, "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+		params.Bot.Send(rickRollMsg)
+
+		alertText := []string{strconv.FormatInt(message.Chat.ID, 10), message.From.UserName, "was rickrolled"}
+		alertMsg := tgbotapi.NewMessage(int64(allowedChat), strings.Join(alertText, " "))
+		params.Bot.Send(alertMsg)
+
+		return
+	}
 
 	cleanText := strings.TrimSpace(message.Text)
 	if strings.HasPrefix(cleanText, "/download") {
