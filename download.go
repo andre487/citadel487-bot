@@ -29,8 +29,8 @@ func DownloadByUrl(params DownloadByUrlParams) {
 	cmd := exec.Command(params.DownloaderPath, args...)
 	cmd.Env = append(
 		cmd.Env,
-		"LC_ALL=en_US.UTF-8",
-		"LANG=en_US.UTF-8",
+		"LC_ALL=C.UTF-8",
+		"LANG=C.UTF-8",
 		"S3_ACCESS_KEY="+params.S3Access,
 		"S3_SECRET_KEY="+params.S3Secret,
 	)
