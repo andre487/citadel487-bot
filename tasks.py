@@ -34,10 +34,6 @@ logging.basicConfig(level=logging.INFO)
 
 @task
 def docker_build(_):
-    os.chdir(DOWNLOADER_SRC_DIR)
-    subprocess.check_call(['./setup.sh'])
-    subprocess.check_call(['./build.sh'])
-
     os.chdir(PROJECT_DIR)
     subprocess.check_call([get_docker(), 'build', '-t', f'{DOCKER_IMAGE_NAME}:latest', '--force-rm', '.'])
 
@@ -46,6 +42,11 @@ def docker_build(_):
 def docker_push(_):
     os.chdir(PROJECT_DIR)
     subprocess.check_call([get_docker(), 'push', f'{DOCKER_IMAGE_NAME}:latest'])
+
+
+@task(docker_build, docker_push)
+def docker_deploy(_):
+    pass
 
 
 @task
