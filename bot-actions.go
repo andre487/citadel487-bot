@@ -42,7 +42,7 @@ func InitBotActions(params BotActionsParams) error {
 		return err
 	}
 
-	downloadChannel := make(chan DownloadByUrlParams)
+	downloadChannel := make(chan DownloadByUrlParams, 2048)
 	go DownloadByUrlWithQueue(&downloadChannel)
 
 	Logger.Info("Waiting for updates")
