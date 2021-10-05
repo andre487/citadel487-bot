@@ -24,12 +24,22 @@ SECRETS = {
     's3-access': ('e6q3nf38hdbee440d4l8', 's3-access'),
     's3-secret': ('e6q3nf38hdbee440d4l8', 's3-secret'),
     'netrc': ('e6qmn9f60sspf916ncu1', 'content'),
+    'sqs-test-queue': ('e6qq93te4b88t6qv2ak0', 'test-queue'),
+    'sqs-prod-queue': ('e6qq93te4b88t6qv2ak0', 'prod-queue'),
+    'sqs-access-key': ('e6qq93te4b88t6qv2ak0', 'access-key'),
+    'sqs-secret-key': ('e6qq93te4b88t6qv2ak0', 'secret-key'),
 }
 
 _yc = None
 _iam_token = None
 
 logging.basicConfig(level=logging.INFO)
+
+
+@task
+def prepare_secrets(_):
+    receive_secrets()
+    logging.info('Secrets has been prepared')
 
 
 @task
@@ -49,9 +59,8 @@ def docker_deploy(_):
     pass
 
 
-@task
+@task(prepare_secrets)
 def docker_run(_):
-    receive_secrets()
     bot_token, _, s3_access, s3_secret = get_secret_values()
 
     subprocess.check_call([
