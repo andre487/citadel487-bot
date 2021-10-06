@@ -11,12 +11,9 @@ func main() {
 	SetupLogger()
 	parser := argparse.NewParser("citadel487-bot", "Citadel487 Telegram bot")
 
-	tokenFile := parser.String("t", "token-file", &argparse.Options{Required: false, Help: "Tg bot token file", Default: "~/.tokens/dev-tg-bot"})
 	s3Endpoint := parser.String("", "s3-endpoint", &argparse.Options{Default: "https://storage.yandexcloud.net"})
 	s3Region := parser.String("", "s3-region", &argparse.Options{Default: "ru-central1"})
 	s3Bucket := parser.String("", "s3-bucket", &argparse.Options{Default: "downloader487-files"})
-	s3AccessFile := parser.String("", "s3-access-file", &argparse.Options{Default: "~/.tokens/s3-access"})
-	s3SecretFile := parser.String("", "s3-secret-file", &argparse.Options{Default: "~/.tokens/s3-secret"})
 	downloaderPath := parser.String("", "downloader-path", &argparse.Options{Default: "./downloader487/downloader/dist/downloader487"})
 	downloadDir := parser.String("", "download-dir", &argparse.Options{Default: "/tmp/citadel487-bot/downloads"})
 
@@ -24,17 +21,11 @@ func main() {
 	PanicOnErr(err)
 
 	secretProvider := NewSecretProvider()
-	Logger.Info(secretProvider.BotToken())
-	Logger.Info(secretProvider.Netrc())
-	Logger.Info(secretProvider.S3Params())
-	Logger.Info(secretProvider.SqsParams())
 
-	token, err := GetSecretValue("BOT_TOKEN", tokenFile)
-	PanicOnErr(err)
-	s3Access, err := GetSecretValue("S3_ACCESS_KEY", s3AccessFile)
-	PanicOnErr(err)
-	s3Secret, err := GetSecretValue("S3_SECRET_KEY", s3SecretFile)
-	PanicOnErr(err)
+	token := secretProvider.BotToken()
+	s3Data := secretProvider.S3Params()
+	s3Access := s3Data.AccessKey
+	s3Secret := s3Data.SecretKey
 
 	bot, err := tgbotapi.NewBotAPI(token)
 	PanicOnErr(err)
