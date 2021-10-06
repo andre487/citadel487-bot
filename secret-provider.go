@@ -57,7 +57,9 @@ type YcSecretProvider struct {
 
 func NewSecretProvider() SecretProvider {
 	var sp SecretProvider
-	if os.Getenv("DEPLOY_TYPE") == "prod" {
+	deployType := os.Getenv("DEPLOY_TYPE")
+	Logger.Info("Deploy type:", deployType)
+	if deployType == "prod" {
 		sp = YcSecretProvider{}
 	} else {
 		sp = DevSecretProvider{}
@@ -166,18 +168,19 @@ func getIamToken() (string, error) {
 	}
 	url := fmt.Sprintf("http://%s/computeMetadata/v1/instance/service-accounts/default/token", metaServiceHost)
 
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
+	req, err := http.NewRequest("GET", url, nil)
+	PanicOnErr(err)
+	req.Header.Set("Metadata-Flavor", "Google")
 
-	result, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
+	client := http.Client{}
+	res, err := client.Do(req)
+	PanicOnErr(err)
+
+	resultBytes, err := ioutil.ReadAll(res.Body)
+	PanicOnErr(err)
 
 	var tokenData IamTokenData
-	json.Unmarshal(result, &tokenData)
+	json.Unmarshal(resultBytes, &tokenData)
 
 	if len(tokenData.AccessToken) == 0 {
 		return "", errors.New("no IAM token")
