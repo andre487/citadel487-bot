@@ -23,6 +23,7 @@ type SqsParamsData struct {
 type SecretProvider interface {
 	Init()
 	BotToken() string
+	Netrc() string
 	S3Params() S3ParamsData
 	SqsParams() SqsParamsData
 }
@@ -44,6 +45,10 @@ func (m DevSecretProvider) Init() {
 
 func (m DevSecretProvider) BotToken() string {
 	return m.readSecretFile("dev-bot-token")
+}
+
+func (m DevSecretProvider) Netrc() string {
+	return m.readSecretFile("netrc")
 }
 
 func (m DevSecretProvider) S3Params() S3ParamsData {

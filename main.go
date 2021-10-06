@@ -11,11 +11,6 @@ func main() {
 	SetupLogger()
 	parser := argparse.NewParser("citadel487-bot", "Citadel487 Telegram bot")
 
-	// secretProvider := NewSecretProvider()
-	// Logger.Info(secretProvider.BotToken())
-	// Logger.Info(secretProvider.S3Params())
-	// Logger.Info(secretProvider.SqsParams())
-
 	tokenFile := parser.String("t", "token-file", &argparse.Options{Required: false, Help: "Tg bot token file", Default: "~/.tokens/dev-tg-bot"})
 	s3Endpoint := parser.String("", "s3-endpoint", &argparse.Options{Default: "https://storage.yandexcloud.net"})
 	s3Region := parser.String("", "s3-region", &argparse.Options{Default: "ru-central1"})
@@ -27,6 +22,12 @@ func main() {
 
 	err := parser.Parse(os.Args)
 	PanicOnErr(err)
+
+	secretProvider := NewSecretProvider()
+	Logger.Info(secretProvider.BotToken())
+	Logger.Info(secretProvider.Netrc())
+	Logger.Info(secretProvider.S3Params())
+	Logger.Info(secretProvider.SqsParams())
 
 	token, err := GetSecretValue("BOT_TOKEN", tokenFile)
 	PanicOnErr(err)
