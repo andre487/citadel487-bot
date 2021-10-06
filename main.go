@@ -14,6 +14,8 @@ func main() {
 	s3Endpoint := parser.String("", "s3-endpoint", &argparse.Options{Default: "https://storage.yandexcloud.net"})
 	s3Region := parser.String("", "s3-region", &argparse.Options{Default: "ru-central1"})
 	s3Bucket := parser.String("", "s3-bucket", &argparse.Options{Default: "downloader487-files"})
+	sqsEndpoint := parser.String("", "sqs-endpoint", &argparse.Options{Default: "https://message-queue.api.cloud.yandex.net"})
+	sqsRegion := parser.String("", "sqs-region", &argparse.Options{Default: "ru-central1"})
 	downloaderPath := parser.String("", "downloader-path", &argparse.Options{Default: "./downloader487/downloader/dist/downloader487"})
 	downloadDir := parser.String("", "download-dir", &argparse.Options{Default: "/tmp/citadel487-bot/downloads"})
 
@@ -29,6 +31,8 @@ func main() {
 
 	bot, err := tgbotapi.NewBotAPI(token)
 	PanicOnErr(err)
+
+	go ReceiveSms(bot, *sqsEndpoint, *sqsRegion, secretProvider.SqsParams())
 
 	InitBotActions(BotActionsParams{
 		Bot:            bot,

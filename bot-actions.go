@@ -22,10 +22,6 @@ type BotActionsParams struct {
 
 var downloadRegexp = regexp.MustCompile(`(https?://\S+)(?:\s|$)`)
 
-// TODO: move to config
-var allowedUserName = "andre487"
-var allowedChat = 94764326
-
 func InitBotActions(params BotActionsParams) error {
 	PrepareNetRc()
 
@@ -60,12 +56,12 @@ func onUpdate(params BotActionsParams, downloadChannel *chan DownloadByUrlParams
 	message := update.Message
 	Logger.Debug("Received message:", message.Chat.ID, message.From.UserName, strings.ReplaceAll(message.Text, "\n", " "))
 
-	if message.From.UserName != allowedUserName || message.Chat.ID != int64(allowedChat) {
+	if message.From.UserName != AllowedUserName || message.Chat.ID != int64(AllowedChat) {
 		rickRollMsg := tgbotapi.NewMessage(message.Chat.ID, "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
 		params.Bot.Send(rickRollMsg)
 
 		alertText := []string{strconv.FormatInt(message.Chat.ID, 10), message.From.UserName, "was rickrolled"}
-		alertMsg := tgbotapi.NewMessage(int64(allowedChat), strings.Join(alertText, " "))
+		alertMsg := tgbotapi.NewMessage(int64(AllowedChat), strings.Join(alertText, " "))
 		params.Bot.Send(alertMsg)
 
 		return
