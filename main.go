@@ -28,6 +28,7 @@ func main() {
 	s3Data := secretProvider.S3Params()
 	s3Access := s3Data.AccessKey
 	s3Secret := s3Data.SecretKey
+	WriteNetRc(secretProvider.Netrc())
 
 	bot, err := tgbotapi.NewBotAPI(token)
 	PanicOnErr(err)

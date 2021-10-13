@@ -23,8 +23,6 @@ type BotActionsParams struct {
 var downloadRegexp = regexp.MustCompile(`(https?://\S+)(?:\s|$)`)
 
 func InitBotActions(params BotActionsParams) error {
-	PrepareNetRc()
-
 	bot := params.Bot
 	if os.Getenv("BOT_DEBUG") == "1" {
 		bot.Debug = true
