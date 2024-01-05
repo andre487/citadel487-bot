@@ -29,15 +29,22 @@ type MessageData struct {
 
 var messageTemplate = template.Must(template.New("msg").Parse(`{{define "T"}}
 SMS487: <b>{{.Tel}}</b>
-<pre>{{.PrintableMessageType}} {{.DeviceId}} {{.PrintableDateTime}}</pre>
+<small>{{.PrintableMessageType}} {{.DeviceId}} {{.PrintableDateTime}}</small>
 {{.Text}}
 {{end}}`))
 
 func ReceiveSms(bot *tgbotapi.BotAPI, sqsEndpoint string, sqsRegion string, sqsParams SqsParamsData) {
 	sess := session.Must(session.NewSession())
-	svc := sqs.New(sess, aws.NewConfig().WithEndpoint(sqsEndpoint).WithRegion(sqsRegion).WithCredentials(
-		credentials.NewStaticCredentials(sqsParams.AccessKey, sqsParams.SecretKey, ""),
-	))
+	svc := sqs.New(
+		sess,
+		aws.NewConfig().WithEndpoint(
+			sqsEndpoint,
+		).WithRegion(
+			sqsRegion,
+		).WithCredentials(
+			credentials.NewStaticCredentials(sqsParams.AccessKey, sqsParams.SecretKey, ""),
+		),
+	)
 
 	Logger.Info("Start to listen SMS queue", sqsParams.QueueUrl)
 	for {

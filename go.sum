@@ -1,7 +1,13 @@
 github.com/akamensky/argparse v1.3.1 h1:kP6+OyvR0fuBH6UhbE6yh/nskrDEIQgEA1SUXDPjx4g=
 github.com/akamensky/argparse v1.3.1/go.mod h1:S5kwC7IuDcEr5VeXtGPRVZ5o/FdhcMlQz4IZQuw64xA=
+github.com/akamensky/argparse v1.4.0 h1:YGzvsTqCvbEZhL8zZu2AiA5nq805NZh75JNj4ajn1xc=
+github.com/akamensky/argparse v1.4.0/go.mod h1:S5kwC7IuDcEr5VeXtGPRVZ5o/FdhcMlQz4IZQuw64xA=
 github.com/aws/aws-sdk-go v1.40.54 h1:8zYzK8wI06G2+Bg2hwTUwzIYCCo6/Wd7lfS0G+GwqXU=
 github.com/aws/aws-sdk-go v1.40.54/go.mod h1:585smgzpB/KqRA+K3y/NL/oYRqQvpNJYvLm+LY1U59Q=
+github.com/aws/aws-sdk-go v1.40.59 h1:aBHm8lOpwbqmqnUlV5mLYLSBa54bZGR8JZOMzDa/r/Q=
+github.com/aws/aws-sdk-go v1.40.59/go.mod h1:585smgzpB/KqRA+K3y/NL/oYRqQvpNJYvLm+LY1U59Q=
+github.com/aws/aws-sdk-go v1.49.15 h1:aH9bSV4kL4ziH0AMtuYbukGIVebXddXBL0cKZ1zj15k=
+github.com/aws/aws-sdk-go v1.49.15/go.mod h1:LF8svs817+Nz+DmiMQKTO3ubZ/6IaTpq3TjupRn3Eqk=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible h1:2cauKuaELYAEARXRkq2LrJ0yDDv1rW7+wrTEdVL3uaU=

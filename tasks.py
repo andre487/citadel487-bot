@@ -2,13 +2,13 @@ import base64
 import contextlib
 import json
 import logging
-import subprocess
 import os
+import shutil
+import subprocess as sp
 import urllib.request
 from urllib.request import Request
 
 from invoke import task
-
 
 PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 DOWNLOADER_SRC_DIR = os.path.join(PROJECT_DIR, 'downloader487', 'downloader')
@@ -45,13 +45,13 @@ def prepare_secrets(_):
 @task
 def docker_build(_):
     os.chdir(PROJECT_DIR)
-    subprocess.check_call([get_docker(), 'build', '-t', f'{DOCKER_IMAGE_NAME}:latest', '--force-rm', '.'])
+    sp.check_call([get_docker(), 'build', '-t', f'{DOCKER_IMAGE_NAME}:latest', '--force-rm', '.'])
 
 
 @task
 def docker_push(_):
     os.chdir(PROJECT_DIR)
-    subprocess.check_call([get_docker(), 'push', f'{DOCKER_IMAGE_NAME}:latest'])
+    sp.check_call([get_docker(), 'push', f'{DOCKER_IMAGE_NAME}:latest'])
 
 
 @task(docker_build, docker_push)
@@ -61,27 +61,18 @@ def docker_deploy(_):
 
 @task(prepare_secrets)
 def docker_run(_):
-    bot_token, _, s3_access, s3_secret = get_secret_values()
-
-    subprocess.check_call([
-        get_docker(), 'run', '--rm', '--name', BINARY_NAME,
-        '-e', f'BOT_TOKEN={bot_token}',
-        '-e', f'S3_ACCESS_KEY={s3_access}',
-        '-e', f'S3_SECRET_KEY={s3_secret}',
+    sp.check_call([
+        get_docker(), 'run', '-ti', '--rm', '--name', BINARY_NAME,
+        '--env', 'DEPLOY_TYPE=dev',
+        '--env', 'BOT_DEBUG=1',
+        '--volume', './.secrets:/.secrets:ro',
         f'{DOCKER_IMAGE_NAME}:latest',
     ])
 
-def get_secret_values():
-    with open(os.path.join(SECRET_DIR, 'dev-bot-token')) as fp:
-        dev_bot_token = fp.read().strip()
-    with open(os.path.join(SECRET_DIR, 'prod-bot-token')) as fp:
-        prod_bot_token = fp.read().strip()
-    with open(os.path.join(SECRET_DIR, 's3-access')) as fp:
-        s3_access = fp.read().strip()
-    with open(os.path.join(SECRET_DIR, 's3-secret')) as fp:
-        s3_secret = fp.read().strip()
 
-    return dev_bot_token, prod_bot_token, s3_access, s3_secret
+@task(docker_build, docker_run)
+def docker_test(_):
+    pass
 
 
 def receive_secrets():
@@ -119,8 +110,7 @@ def get_iam_token():
         return _iam_token
 
     logging.info('Get IAM token')
-    _iam_token = subprocess.check_output(
-        [get_yc(), 'iam', 'create-token', '--no-user-output']).strip().decode('utf8')
+    _iam_token = sp.check_output([get_yc(), 'iam', 'create-token', '--no-user-output'], encoding='utf8').strip()
 
     return _iam_token
 
@@ -131,14 +121,15 @@ def get_yc():
         return _yc
 
     logging.info('Get Yandex Cloud tool')
-    try:
-        _yc = subprocess.check_output(['which', 'yc']).strip().decode('utf8')
-    except subprocess.CalledProcessError:
-        logging.warning('Try to install and setup yc: https://clck.ru/Sak4W')
-        raise
+    _yc = shutil.which('yc')
+    if not _yc:
+        raise Exception('Try to install and setup yc: https')
 
     return _yc
 
 
 def get_docker():
-    return subprocess.check_output(['which', 'docker']).strip().decode('utf8')
+    docker = shutil.which('docker')
+    if not docker:
+        raise Exception('Docker not found')
+    return docker
