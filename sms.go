@@ -29,7 +29,7 @@ type MessageData struct {
 
 var messageTemplate = template.Must(template.New("msg").Parse(`{{define "T"}}
 SMS487: <b>{{.Tel}}</b>
-<small>{{.PrintableMessageType}} {{.DeviceId}} {{.PrintableDateTime}}</small>
+<blockquote>{{.PrintableMessageType}} {{.DeviceId}} {{.PrintableDateTime}}</blockquote>
 {{.Text}}
 {{end}}`))
 
