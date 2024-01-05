@@ -123,7 +123,7 @@ def get_yc():
     logging.info('Get Yandex Cloud tool')
     _yc = shutil.which('yc')
     if not _yc:
-        raise Exception('Try to install and setup yc: https')
+        raise Exception('Try to install and setup yc: https://clck.ru/Sak4W')
 
     return _yc
 
