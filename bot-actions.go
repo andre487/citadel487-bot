@@ -22,7 +22,7 @@ type BotActionsParams struct {
 
 var downloadRegexp = regexp.MustCompile(`(https?://\S+)(?:\s|$)`)
 
-func InitBotActions(params BotActionsParams) error {
+func InitBotActions(params BotActionsParams) {
 	bot := params.Bot
 	if os.Getenv("BOT_DEBUG") == "1" {
 		bot.Debug = true
@@ -33,7 +33,7 @@ func InitBotActions(params BotActionsParams) error {
 
 	updates, err := bot.GetUpdatesChan(u)
 	if err != nil {
-		return err
+		PanicOnErr(err)
 	}
 
 	downloadChannel := make(chan DownloadByUrlParams, 2048)
@@ -46,8 +46,6 @@ func InitBotActions(params BotActionsParams) error {
 		}
 		onUpdate(params, &downloadChannel, &update)
 	}
-
-	return nil
 }
 
 func onUpdate(params BotActionsParams, downloadChannel *chan DownloadByUrlParams, update *tgbotapi.Update) {

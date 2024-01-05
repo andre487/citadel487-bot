@@ -95,8 +95,8 @@ func (m DevSecretProvider) S3Params() S3ParamsData {
 
 func (m DevSecretProvider) SqsParams() SqsParamsData {
 	return SqsParamsData{
-		// QueueUrl:  readSecretFile("sqs-test-queue"),
-		QueueUrl:  readSecretFile("sqs-prod-queue"),
+		// QueueUrl:  readSecretFile("sqs-prod-queue"),
+		QueueUrl:  readSecretFile("sqs-test-queue"),
 		AccessKey: readSecretFile("sqs-access-key"),
 		SecretKey: readSecretFile("sqs-secret-key"),
 	}
