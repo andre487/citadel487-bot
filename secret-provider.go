@@ -122,9 +122,9 @@ func (m YcSecretProvider) S3Params() S3ParamsData {
 
 func (m YcSecretProvider) SqsParams() SqsParamsData {
 	return SqsParamsData{
-		QueueUrl:  requestLockBoxTextValue("e6qq93te4b88t6qv2ak0", "prod-queue"),
-		AccessKey: requestLockBoxTextValue("e6qq93te4b88t6qv2ak0", "access-key"),
-		SecretKey: requestLockBoxTextValue("e6qq93te4b88t6qv2ak0", "secret-key"),
+		QueueUrl:  requestLockBoxTextValue("e6q3nf38hdbee440d4l8", "prod-queue"),
+		AccessKey: requestLockBoxTextValue("e6q3nf38hdbee440d4l8", "sqs-access-key"),
+		SecretKey: requestLockBoxTextValue("e6q3nf38hdbee440d4l8", "sqs-secret-key"),
 	}
 }
 
