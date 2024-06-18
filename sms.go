@@ -90,6 +90,11 @@ func ReceiveSms(bot *tgbotapi.BotAPI, sqsEndpoint string, sqsRegion string, sqsP
 					continue
 				}
 
+				if doc.Tel == "org.telegram.messenger" {
+					Logger.Debug("Message from Telegram, skip")
+					continue
+				}
+
 				messageHtmlWriter := bytes.Buffer{}
 				err := messageTemplate.ExecuteTemplate(&messageHtmlWriter, "T", doc)
 				if err != nil {
