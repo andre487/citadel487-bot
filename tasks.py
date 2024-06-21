@@ -55,8 +55,10 @@ def docker_push(_):
 
 
 @task(docker_build, docker_push)
-def docker_deploy(_):
-    pass
+def make_deploy(c):
+    c.run(f'ansible-playbook -v {PROJECT_DIR}/deploy/setup.yml', pty=True, env={
+        'APP_DOCKER_IMAGE': f'{DOCKER_IMAGE_NAME}:latest',
+    })
 
 
 @task(prepare_secrets)
@@ -68,11 +70,6 @@ def docker_run(_):
         '--volume', './.secrets:/.secrets:ro',
         f'{DOCKER_IMAGE_NAME}:latest',
     ])
-
-
-@task(docker_build, docker_run)
-def docker_test(_):
-    pass
 
 
 def receive_secrets():
