@@ -13,6 +13,7 @@
 
   roles:
     - fail2ban
+    - firewall
 
   tasks:
     - name: Build app
