@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"text/template"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -60,19 +61,28 @@ func ReceiveSms(bot *tgbotapi.BotAPI, sqsEndpoint string, sqsRegion string, sqsP
 			Logger.Error(msgText)
 
 			msg := tgbotapi.NewMessage(int64(AllowedChat), msgText)
-			bot.Send(msg)
+			_, err := bot.Send(msg)
+			if err != nil {
+				Logger.Warning(fmt.Sprintf("Error when sending SQS messages: %s", err.Error()))
+			}
 
 			continue
 		}
 
 		for _, message := range result.Messages {
-			svc.DeleteMessage(&sqs.DeleteMessageInput{
+			_, err := svc.DeleteMessage(&sqs.DeleteMessageInput{
 				QueueUrl:      aws.String(sqsParams.QueueUrl),
 				ReceiptHandle: message.ReceiptHandle,
 			})
+			if err != nil {
+				Logger.Warning(fmt.Sprintf("Error when deleting SQS messages: %s", err.Error()))
+			}
 
 			var messageData MessageData
-			json.Unmarshal([]byte(*message.Body), &messageData)
+			err = json.Unmarshal([]byte(*message.Body), &messageData)
+			if err != nil {
+				Logger.Warning(fmt.Sprintf("Error when unmarshalling SQS messages: %s", err.Error()))
+			}
 
 			if messageData.Type != "new_messages" {
 				Logger.Debug("Unknown message type:", messageData.Type)

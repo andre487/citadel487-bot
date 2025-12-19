@@ -1,8 +1,8 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -10,17 +10,8 @@ import (
 )
 
 type BotActionsParams struct {
-	Bot            *tgbotapi.BotAPI
-	S3Endpoint     string
-	S3Region       string
-	S3Bucket       string
-	S3Access       string
-	S3Secret       string
-	DownloaderPath string
-	DownloadDir    string
+	Bot *tgbotapi.BotAPI
 }
-
-var downloadRegexp = regexp.MustCompile(`(https?://\S+)(?:\s|$)`)
 
 func InitBotActions(params BotActionsParams) {
 	bot := params.Bot
@@ -36,60 +27,38 @@ func InitBotActions(params BotActionsParams) {
 		PanicOnErr(err)
 	}
 
-	downloadChannel := make(chan DownloadByUrlParams, 2048)
-	go DownloadByUrlWithQueue(&downloadChannel)
-
 	Logger.Info("Waiting for updates")
 	for update := range updates {
 		if update.Message == nil {
 			continue
 		}
-		onUpdate(params, &downloadChannel, &update)
+		onUpdate(params, &update)
 	}
 }
 
-func onUpdate(params BotActionsParams, downloadChannel *chan DownloadByUrlParams, update *tgbotapi.Update) {
+func onUpdate(params BotActionsParams, update *tgbotapi.Update) {
 	message := update.Message
 	Logger.Debug("Received message:", message.Chat.ID, message.From.UserName, strings.ReplaceAll(message.Text, "\n", " "))
 
+	var err error
 	if message.From.UserName != AllowedUserName || message.Chat.ID != int64(AllowedChat) {
 		rickRollMsg := tgbotapi.NewMessage(message.Chat.ID, "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-		params.Bot.Send(rickRollMsg)
+		_, err = params.Bot.Send(rickRollMsg)
+		if err != nil {
+			Logger.Warning(fmt.Sprintf("Error sending rickRollMsg: %s", err.Error()))
+		}
 
 		alertText := []string{strconv.FormatInt(message.Chat.ID, 10), message.From.UserName, "was rickrolled"}
 		alertMsg := tgbotapi.NewMessage(int64(AllowedChat), strings.Join(alertText, " "))
-		params.Bot.Send(alertMsg)
+		_, err = params.Bot.Send(alertMsg)
+		if err != nil {
+			Logger.Warning(fmt.Sprintf("Error sending alertMsg: %s", err.Error()))
+		}
 
 		return
 	}
 
-	cleanText := strings.TrimSpace(message.Text)
-	if strings.HasPrefix(cleanText, "/download") {
-		actionDownloadUrl(params, downloadChannel, update)
-	} else if message.Document != nil {
-		DownloadDocument(params, update)
-	} else if message.Photo != nil {
-		DownloadPhoto(params, update)
-	} else if message.Video != nil {
-		DownloadVideo(params, update)
-	} else {
-		actionDefault(params, update)
-	}
-}
-
-func actionDownloadUrl(params BotActionsParams, downloadChannel *chan DownloadByUrlParams, update *tgbotapi.Update) {
-	message := update.Message
-
-	urls := downloadRegexp.FindAllString(message.Text, -1)
-	if urls == nil {
-		msg := tgbotapi.NewMessage(message.Chat.ID, "No URLs found in message")
-		msg.ReplyToMessageID = message.MessageID
-
-		params.Bot.Send(msg)
-		return
-	}
-
-	downloadFiles(params, downloadChannel, message, urls)
+	actionDefault(params, update)
 }
 
 func actionDefault(params BotActionsParams, update *tgbotapi.Update) {
@@ -98,25 +67,8 @@ func actionDefault(params BotActionsParams, update *tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(message.Chat.ID, "Unknown action")
 	msg.ReplyToMessageID = message.MessageID
 
-	params.Bot.Send(msg)
-}
-
-func downloadFiles(
-	params BotActionsParams, downloadChannel *chan DownloadByUrlParams,
-	message *tgbotapi.Message, urls []string,
-) {
-	dwlParams := DownloadByUrlParams{
-		Message: message,
-		Urls:    urls,
+	_, err := params.Bot.Send(msg)
+	if err != nil {
+		Logger.Warning(fmt.Sprintf("Error sending msg: %s", err.Error()))
 	}
-	dwlParams.Bot = params.Bot
-	dwlParams.S3Endpoint = params.S3Endpoint
-	dwlParams.S3Region = params.S3Region
-	dwlParams.S3Bucket = params.S3Bucket
-	dwlParams.S3Access = params.S3Access
-	dwlParams.S3Secret = params.S3Secret
-	dwlParams.DownloaderPath = params.DownloaderPath
-	dwlParams.DownloadDir = params.DownloadDir
-
-	*downloadChannel <- dwlParams
 }

@@ -2,11 +2,10 @@ package main
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -14,17 +13,11 @@ import (
 	"strings"
 )
 
-// TODO: move to config
 const AllowedUserName = "andre487"
 const AllowedChat = 94764326
 
 var lockBoxHandler = "https://payload.lockbox.api.cloud.yandex.net/lockbox/v1/secrets"
 var secretDir string
-
-type S3ParamsData struct {
-	AccessKey string
-	SecretKey string
-}
 
 type SqsParamsData struct {
 	QueueUrl  string
@@ -48,8 +41,6 @@ type LockBoxResult struct {
 type SecretProvider interface {
 	Init()
 	BotToken() string
-	Netrc() string
-	S3Params() S3ParamsData
 	SqsParams() SqsParamsData
 }
 
@@ -82,17 +73,6 @@ func (m DevSecretProvider) BotToken() string {
 	return readSecretFile("dev-bot-token")
 }
 
-func (m DevSecretProvider) Netrc() string {
-	return readSecretFile("netrc")
-}
-
-func (m DevSecretProvider) S3Params() S3ParamsData {
-	return S3ParamsData{
-		AccessKey: readSecretFile("s3-access"),
-		SecretKey: readSecretFile("s3-secret"),
-	}
-}
-
 func (m DevSecretProvider) SqsParams() SqsParamsData {
 	return SqsParamsData{
 		// QueueUrl:  readSecretFile("sqs-prod-queue"),
@@ -109,17 +89,6 @@ func (m YcSecretProvider) BotToken() string {
 	return requestLockBoxTextValue("e6qbv0lnihrdt4mmer19", "token")
 }
 
-func (m YcSecretProvider) Netrc() string {
-	return requestLockBoxBinaryValue("e6qmn9f60sspf916ncu1", "content")
-}
-
-func (m YcSecretProvider) S3Params() S3ParamsData {
-	return S3ParamsData{
-		AccessKey: requestLockBoxTextValue("e6q3nf38hdbee440d4l8", "s3-access"),
-		SecretKey: requestLockBoxTextValue("e6q3nf38hdbee440d4l8", "s3-secret"),
-	}
-}
-
 func (m YcSecretProvider) SqsParams() SqsParamsData {
 	return SqsParamsData{
 		QueueUrl:  requestLockBoxTextValue("e6q3nf38hdbee440d4l8", "prod-queue"),
@@ -129,7 +98,7 @@ func (m YcSecretProvider) SqsParams() SqsParamsData {
 }
 
 func readSecretFile(filePath string) string {
-	res, err := ioutil.ReadFile(path.Join(secretDir, filePath))
+	res, err := os.ReadFile(path.Join(secretDir, filePath))
 	PanicOnErr(err)
 	return strings.TrimSpace(string(res))
 }
@@ -157,12 +126,19 @@ func requestLockBox(secId string) LockBoxResult {
 	client := http.Client{}
 	res, err := client.Do(req)
 	PanicOnErr(err)
+	defer func() {
+		err := res.Body.Close()
+		if err != nil {
+			Logger.Warning("Error closing response body:", err)
+		}
+	}()
 
-	resultBytes, err := ioutil.ReadAll(res.Body)
+	resultBytes, err := io.ReadAll(res.Body)
 	PanicOnErr(err)
 
 	var result LockBoxResult
-	json.Unmarshal(resultBytes, &result)
+	err = json.Unmarshal(resultBytes, &result)
+	PanicOnErr(err)
 	return result
 }
 
@@ -180,12 +156,19 @@ func getIamToken() (string, error) {
 	client := http.Client{}
 	res, err := client.Do(req)
 	PanicOnErr(err)
+	defer func() {
+		err := res.Body.Close()
+		if err != nil {
+			Logger.Warning("Error closing response body:", err)
+		}
+	}()
 
-	resultBytes, err := ioutil.ReadAll(res.Body)
+	resultBytes, err := io.ReadAll(res.Body)
 	PanicOnErr(err)
 
 	var tokenData IamTokenData
-	json.Unmarshal(resultBytes, &tokenData)
+	err = json.Unmarshal(resultBytes, &tokenData)
+	PanicOnErr(err)
 
 	if len(tokenData.AccessToken) == 0 {
 		return "", errors.New("no IAM token")
@@ -206,24 +189,4 @@ func requestLockBoxTextValue(secId string, name string) string {
 		Logger.Warning(name + " is empty")
 	}
 	return value
-}
-
-func requestLockBoxBinaryValue(secId string, name string) string {
-	result := requestLockBox(secId)
-	value := ""
-	for _, val := range result.Entries {
-		if val.Key == name {
-			value = val.BinaryValue
-			break
-		}
-	}
-	if len(value) == 0 {
-		Logger.Warning(name + " is empty")
-		return ""
-	}
-
-	decoded, err := base64.StdEncoding.DecodeString(value)
-	PanicOnErr(err)
-
-	return string(decoded)
 }
