@@ -1,0 +1,26 @@
+[Unit]
+Description={{ app_name }} service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+WorkingDirectory=%h
+ExecStart={{ remote_bin_dir }}/{{ app_name }}
+
+Environment="DEPLOY_TYPE=prod"
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+Restart=on-failure
+RestartSec=2s
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
