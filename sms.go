@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"text/template"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -66,6 +67,7 @@ func ReceiveSms(bot *tgbotapi.BotAPI, sqsEndpoint string, sqsRegion string, sqsP
 				Logger.Warning(fmt.Sprintf("Error when sending SQS messages: %s", err.Error()))
 			}
 
+			time.Sleep(30 * time.Second)
 			continue
 		}
 

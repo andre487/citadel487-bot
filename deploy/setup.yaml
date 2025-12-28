@@ -1,4 +1,4 @@
-- hosts: citadel487-bot
+- hosts: citadel487_bot
   become: true
   vars:
     app_name: citadel487-bot

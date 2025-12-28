@@ -36,6 +36,8 @@ type LockBoxResult struct {
 		BinaryValue string
 	}
 	VersionId string
+	Code      int    `json:"code,omitempty"`
+	Message   string `json:"message,omitempty"`
 }
 
 type SecretProvider interface {
@@ -91,9 +93,9 @@ func (m YcSecretProvider) BotToken() string {
 
 func (m YcSecretProvider) SqsParams() SqsParamsData {
 	return SqsParamsData{
-		QueueUrl:  requestLockBoxTextValue("e6q3nf38hdbee440d4l8", "prod-queue"),
-		AccessKey: requestLockBoxTextValue("e6q3nf38hdbee440d4l8", "sqs-access-key"),
-		SecretKey: requestLockBoxTextValue("e6q3nf38hdbee440d4l8", "sqs-secret-key"),
+		QueueUrl:  requestLockBoxTextValue("e6qq93te4b88t6qv2ak0", "prod-queue"),
+		AccessKey: requestLockBoxTextValue("e6qq93te4b88t6qv2ak0", "access-key"),
+		SecretKey: requestLockBoxTextValue("e6qq93te4b88t6qv2ak0", "secret-key"),
 	}
 }
 
@@ -115,6 +117,9 @@ func requestLockBox(secId string) LockBoxResult {
 		PanicOnErr(err)
 
 		iamToken = strings.TrimSpace(tokenBuffer.String())
+	}
+	if len(iamToken) == 0 {
+		Logger.Fatal("Empty IAM token")
 	}
 
 	url := fmt.Sprintf("%s/%s/payload", lockBoxHandler, secId)
@@ -139,6 +144,10 @@ func requestLockBox(secId string) LockBoxResult {
 	var result LockBoxResult
 	err = json.Unmarshal(resultBytes, &result)
 	PanicOnErr(err)
+	if result.Code != 0 {
+		Logger.Fatal(result.Message)
+	}
+
 	return result
 }
 
@@ -179,11 +188,16 @@ func getIamToken() (string, error) {
 func requestLockBoxTextValue(secId string, name string) string {
 	result := requestLockBox(secId)
 	value := ""
+	matched := false
 	for _, val := range result.Entries {
 		if val.Key == name {
 			value = val.TextValue
+			matched = true
 			break
 		}
+	}
+	if !matched {
+		Logger.Fatalf("%s not found in secret '%s'", name, secId)
 	}
 	if len(value) == 0 {
 		Logger.Warning(name + " is empty")
